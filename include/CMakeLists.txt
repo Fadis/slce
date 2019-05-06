@@ -1,0 +1,3 @@
+INSTALL( DIRECTORY slce/
+	DESTINATION include/slce/
+	FILES_MATCHING PATTERN "*.hpp" )
