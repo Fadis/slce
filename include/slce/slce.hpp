@@ -841,6 +841,11 @@ namespace slce {
     is_predicate< R, U, T >::value
   > {};
   SLCE_HELPER( Relation, is_relation )
+
+  template< typename R, typename T, typename U >
+  struct is_strict_weak_order : public is_relation< R, T, U > {};
+  SLCE_HELPER( StrictWeakOrder, is_strict_weak_order )
+
 }
 #endif
 

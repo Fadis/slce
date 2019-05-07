@@ -864,3 +864,14 @@ BOOST_AUTO_TEST_CASE(Relation) {
 #endif
 }
 
+BOOST_AUTO_TEST_CASE(StrictWeakOrder) {
+#ifdef __cpp_lib_invoke
+  BOOST_CHECK_EQUAL( ( slce::is_strict_weak_order< callable, base, other >::value ), false );
+  BOOST_CHECK_EQUAL( ( slce::is_strict_weak_order< predicate, base, other >::value ), false );
+  BOOST_CHECK_EQUAL( ( slce::is_strict_weak_order< relation, base, other >::value ), true );
+#else
+  BOOST_CHECK_EQUAL( ( slce::is_strict_weak_order< callable, base, other >::value ), false );
+  BOOST_CHECK_EQUAL( ( slce::is_strict_weak_order< predicate, base, other >::value ), false );
+  BOOST_CHECK_EQUAL( ( slce::is_strict_weak_order< relation, base, other >::value ), false );
+#endif
+}
