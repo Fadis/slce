@@ -214,7 +214,206 @@ struct relation {
   bool operator()( const base&, const other& ) { return true; };
   bool operator()( const other&, const base& ) { return true; };
 };
-
+struct implicit_input_iterator {
+  using value_type = int;
+  int &operator*() const {
+    static int value = 0;
+    return value;
+  }
+  implicit_input_iterator &operator++() {
+    return *this;
+  }
+  implicit_input_iterator operator++(int) {
+    return *this;
+  }
+};
+bool operator==( const implicit_input_iterator&, const implicit_input_iterator& ) { return true; }
+bool operator!=( const implicit_input_iterator&, const implicit_input_iterator& ) { return false; }
+int operator-( const implicit_input_iterator&, const implicit_input_iterator& ) { return 0; }
+struct explicit_input_iterator {
+  using value_type = int;
+  using difference_type = int;
+  using pointer = int*;
+  using reference = int&;
+  int &operator*() const {
+    static int value = 0;
+    return value;
+  }
+  explicit_input_iterator &operator++() {
+    return *this;
+  }
+  explicit_input_iterator operator++(int) {
+    return *this;
+  }
+};
+bool operator==( const explicit_input_iterator&, const explicit_input_iterator& ) { return true; }
+bool operator!=( const explicit_input_iterator&, const explicit_input_iterator& ) { return false; }
+int operator-( const explicit_input_iterator&, const explicit_input_iterator& ) { return 0; }
+struct implicit_forward_iterator {
+  using value_type = int;
+  int &operator*() const {
+    static int value = 0;
+    return value;
+  }
+  implicit_forward_iterator &operator++() {
+    return *this;
+  }
+  implicit_forward_iterator operator++(int) {
+    return *this;
+  }
+};
+bool operator==( const implicit_forward_iterator&, const implicit_forward_iterator& ) { return true; }
+bool operator!=( const implicit_forward_iterator&, const implicit_forward_iterator& ) { return false; }
+int operator-( const implicit_forward_iterator&, const implicit_forward_iterator& ) { return 0; }
+struct explicit_forward_iterator {
+  using value_type = int;
+  using difference_type = int;
+  using pointer = int*;
+  using reference = int&;
+  int &operator*() const {
+    static int value = 0;
+    return value;
+  }
+  explicit_forward_iterator &operator++() {
+    return *this;
+  }
+  explicit_forward_iterator operator++(int) {
+    return *this;
+  }
+};
+bool operator==( const explicit_forward_iterator&, const explicit_forward_iterator& ) { return true; }
+bool operator!=( const explicit_forward_iterator&, const explicit_forward_iterator& ) { return false; }
+int operator-( const explicit_forward_iterator&, const explicit_forward_iterator& ) { return 0; }
+struct implicit_bidirectional_iterator {
+  using value_type = int;
+  int &operator*() const {
+    static int value = 0;
+    return value;
+  }
+  implicit_bidirectional_iterator &operator++() {
+    return *this;
+  }
+  implicit_bidirectional_iterator operator++(int) {
+    return *this;
+  }
+  implicit_bidirectional_iterator &operator--() {
+    return *this;
+  }
+  implicit_bidirectional_iterator operator--(int) {
+    return *this;
+  }
+};
+bool operator==( const implicit_bidirectional_iterator&, const implicit_bidirectional_iterator& ) { return true; }
+bool operator!=( const implicit_bidirectional_iterator&, const implicit_bidirectional_iterator& ) { return false; }
+int operator-( const implicit_bidirectional_iterator&, const implicit_bidirectional_iterator& ) { return 0; }
+struct explicit_bidirectional_iterator {
+  using value_type = int;
+  using difference_type = int;
+  using pointer = int*;
+  using reference = int&;
+  int &operator*() const {
+    static int value = 0;
+    return value;
+  }
+  explicit_bidirectional_iterator &operator++() {
+    return *this;
+  }
+  explicit_bidirectional_iterator operator++(int) {
+    return *this;
+  }
+  explicit_bidirectional_iterator &operator--() {
+    return *this;
+  }
+  explicit_bidirectional_iterator operator--(int) {
+    return *this;
+  }
+};
+bool operator==( const explicit_bidirectional_iterator&, const explicit_bidirectional_iterator& ) { return true; }
+bool operator!=( const explicit_bidirectional_iterator&, const explicit_bidirectional_iterator& ) { return false; }
+int operator-( const explicit_bidirectional_iterator&, const explicit_bidirectional_iterator& ) { return 0; }
+struct implicit_random_access_iterator {
+  using value_type = int;
+  int &operator*() const {
+    static int value = 0;
+    return value;
+  }
+  int &operator[](int) const {
+    static int value = 0;
+    return value;
+  }
+  implicit_random_access_iterator &operator++() {
+    return *this;
+  }
+  implicit_random_access_iterator operator++(int) {
+    return *this;
+  }
+  implicit_random_access_iterator &operator+=(int) {
+    return *this;
+  }
+  implicit_random_access_iterator &operator--() {
+    return *this;
+  }
+  implicit_random_access_iterator operator--(int) {
+    return *this;
+  }
+  implicit_random_access_iterator &operator-=(int) {
+    return *this;
+  }
+};
+bool operator==( const implicit_random_access_iterator&, const implicit_random_access_iterator& ) { return true; }
+bool operator!=( const implicit_random_access_iterator&, const implicit_random_access_iterator& ) { return false; }
+bool operator<( const implicit_random_access_iterator&, const implicit_random_access_iterator& ) { return false; }
+bool operator>( const implicit_random_access_iterator&, const implicit_random_access_iterator& ) { return false; }
+bool operator<=( const implicit_random_access_iterator&, const implicit_random_access_iterator& ) { return true; }
+bool operator>=( const implicit_random_access_iterator&, const implicit_random_access_iterator& ) { return true; }
+int operator-( const implicit_random_access_iterator&, const implicit_random_access_iterator& ) { return 0; }
+implicit_random_access_iterator operator+( int, const implicit_random_access_iterator &a ) { return a; }
+implicit_random_access_iterator operator+( const implicit_random_access_iterator &a, int ) { return a; }
+implicit_random_access_iterator operator-( int, const implicit_random_access_iterator &a ) { return a; }
+implicit_random_access_iterator operator-( const implicit_random_access_iterator &a, int ) { return a; }
+struct explicit_random_access_iterator {
+  using value_type = int;
+  using difference_type = int;
+  using pointer = int*;
+  using reference = int&;
+  int &operator*() const {
+    static int value = 0;
+    return value;
+  }
+  int &operator[](int) const {
+    static int value = 0;
+    return value;
+  }
+  explicit_random_access_iterator &operator++() {
+    return *this;
+  }
+  explicit_random_access_iterator operator++(int) {
+    return *this;
+  }
+  explicit_random_access_iterator &operator+=(int) {
+    return *this;
+  }
+  explicit_random_access_iterator &operator--() {
+    return *this;
+  }
+  explicit_random_access_iterator operator--(int) {
+    return *this;
+  }
+  explicit_random_access_iterator &operator-=(int) {
+    return *this;
+  }
+};
+bool operator==( const explicit_random_access_iterator&, const explicit_random_access_iterator& ) { return true; }
+bool operator!=( const explicit_random_access_iterator&, const explicit_random_access_iterator& ) { return false; }
+bool operator<( const explicit_random_access_iterator&, const explicit_random_access_iterator& ) { return false; }
+bool operator>( const explicit_random_access_iterator&, const explicit_random_access_iterator& ) { return false; }
+bool operator<=( const explicit_random_access_iterator&, const explicit_random_access_iterator& ) { return true; }
+bool operator>=( const explicit_random_access_iterator&, const explicit_random_access_iterator& ) { return true; }
+int operator-( const explicit_random_access_iterator&, const explicit_random_access_iterator& ) { return 0; }
+explicit_random_access_iterator operator+( int, const explicit_random_access_iterator &a ) { return a; }
+explicit_random_access_iterator operator+( const explicit_random_access_iterator &a, int ) { return a; }
+explicit_random_access_iterator operator-( int, const explicit_random_access_iterator &a ) { return a; }
+explicit_random_access_iterator operator-( const explicit_random_access_iterator &a, int ) { return a; }
 
 BOOST_AUTO_TEST_CASE(Same) {
   BOOST_CHECK_EQUAL( ( slce::is_same< base, base >::value ), true );
@@ -359,6 +558,51 @@ BOOST_AUTO_TEST_CASE(Integral) {
   BOOST_CHECK_EQUAL( ( slce::is_integral< volatile int >::value ), true );
   BOOST_CHECK_EQUAL( ( slce::is_integral< int& >::value ), false );
   BOOST_CHECK_EQUAL( ( slce::is_integral< int* >::value ), false );
+  BOOST_CHECK_EQUAL( ( slce::is_integral< unsigned int >::value ), true );
+  BOOST_CHECK_EQUAL( ( slce::is_integral< const unsigned int >::value ), true );
+  BOOST_CHECK_EQUAL( ( slce::is_integral< volatile unsigned int >::value ), true );
+  BOOST_CHECK_EQUAL( ( slce::is_integral< unsigned int& >::value ), false );
+  BOOST_CHECK_EQUAL( ( slce::is_integral< unsigned int* >::value ), false );
+}
+
+BOOST_AUTO_TEST_CASE(SignedIntegral) {
+  BOOST_CHECK_EQUAL( ( slce::is_signed_integral< base >::value ), false );
+  BOOST_CHECK_EQUAL( ( slce::is_signed_integral< inherited >::value ), false );
+  BOOST_CHECK_EQUAL( ( slce::is_signed_integral< other >::value ), false );
+  BOOST_CHECK_EQUAL( ( slce::is_signed_integral< const base >::value ), false );
+  BOOST_CHECK_EQUAL( ( slce::is_signed_integral< volatile base >::value ), false );
+  BOOST_CHECK_EQUAL( ( slce::is_signed_integral< base& >::value ), false );
+  BOOST_CHECK_EQUAL( ( slce::is_signed_integral< base* >::value ), false );
+  BOOST_CHECK_EQUAL( ( slce::is_signed_integral< int >::value ), true );
+  BOOST_CHECK_EQUAL( ( slce::is_signed_integral< const int >::value ), true );
+  BOOST_CHECK_EQUAL( ( slce::is_signed_integral< volatile int >::value ), true );
+  BOOST_CHECK_EQUAL( ( slce::is_signed_integral< int& >::value ), false );
+  BOOST_CHECK_EQUAL( ( slce::is_signed_integral< int* >::value ), false );
+  BOOST_CHECK_EQUAL( ( slce::is_signed_integral< unsigned int >::value ), false );
+  BOOST_CHECK_EQUAL( ( slce::is_signed_integral< const unsigned int >::value ), false );
+  BOOST_CHECK_EQUAL( ( slce::is_signed_integral< volatile unsigned int >::value ), false );
+  BOOST_CHECK_EQUAL( ( slce::is_signed_integral< unsigned int& >::value ), false );
+  BOOST_CHECK_EQUAL( ( slce::is_signed_integral< unsigned int* >::value ), false );
+}
+
+BOOST_AUTO_TEST_CASE(UnsignedIntegral) {
+  BOOST_CHECK_EQUAL( ( slce::is_unsigned_integral< base >::value ), false );
+  BOOST_CHECK_EQUAL( ( slce::is_unsigned_integral< inherited >::value ), false );
+  BOOST_CHECK_EQUAL( ( slce::is_unsigned_integral< other >::value ), false );
+  BOOST_CHECK_EQUAL( ( slce::is_unsigned_integral< const base >::value ), false );
+  BOOST_CHECK_EQUAL( ( slce::is_unsigned_integral< volatile base >::value ), false );
+  BOOST_CHECK_EQUAL( ( slce::is_unsigned_integral< base& >::value ), false );
+  BOOST_CHECK_EQUAL( ( slce::is_unsigned_integral< base* >::value ), false );
+  BOOST_CHECK_EQUAL( ( slce::is_unsigned_integral< int >::value ), false );
+  BOOST_CHECK_EQUAL( ( slce::is_unsigned_integral< const int >::value ), false );
+  BOOST_CHECK_EQUAL( ( slce::is_unsigned_integral< volatile int >::value ), false );
+  BOOST_CHECK_EQUAL( ( slce::is_unsigned_integral< int& >::value ), false );
+  BOOST_CHECK_EQUAL( ( slce::is_unsigned_integral< int* >::value ), false );
+  BOOST_CHECK_EQUAL( ( slce::is_unsigned_integral< unsigned int >::value ), true );
+  BOOST_CHECK_EQUAL( ( slce::is_unsigned_integral< const unsigned int >::value ), true );
+  BOOST_CHECK_EQUAL( ( slce::is_unsigned_integral< volatile unsigned int >::value ), true );
+  BOOST_CHECK_EQUAL( ( slce::is_unsigned_integral< unsigned int& >::value ), false );
+  BOOST_CHECK_EQUAL( ( slce::is_unsigned_integral< unsigned int* >::value ), false );
 }
 
 BOOST_AUTO_TEST_CASE(Assignable) {
@@ -875,3 +1119,54 @@ BOOST_AUTO_TEST_CASE(StrictWeakOrder) {
   BOOST_CHECK_EQUAL( ( slce::is_strict_weak_order< relation, base, other >::value ), false );
 #endif
 }
+
+BOOST_AUTO_TEST_CASE(Cpp17Iterator) {
+  BOOST_CHECK_EQUAL( ( slce::detail::is_cpp17_iterator< base >::value ), false );
+  BOOST_CHECK_EQUAL( ( slce::detail::is_cpp17_iterator< explicit_forward_iterator >::value ), true );
+  BOOST_CHECK_EQUAL( ( slce::detail::is_cpp17_iterator< implicit_forward_iterator >::value ), true );
+  BOOST_CHECK_EQUAL( ( slce::detail::is_cpp17_iterator< explicit_bidirectional_iterator >::value ), true );
+  BOOST_CHECK_EQUAL( ( slce::detail::is_cpp17_iterator< implicit_bidirectional_iterator >::value ), true );
+  BOOST_CHECK_EQUAL( ( slce::detail::is_cpp17_iterator< explicit_random_access_iterator >::value ), true );
+  BOOST_CHECK_EQUAL( ( slce::detail::is_cpp17_iterator< implicit_random_access_iterator >::value ), true );
+}
+
+BOOST_AUTO_TEST_CASE(Cpp17InputIterator) {
+  BOOST_CHECK_EQUAL( ( slce::detail::is_cpp17_input_iterator< base >::value ), false );
+  BOOST_CHECK_EQUAL( ( slce::detail::is_cpp17_input_iterator< explicit_forward_iterator >::value ), true );
+  BOOST_CHECK_EQUAL( ( slce::detail::is_cpp17_input_iterator< implicit_forward_iterator >::value ), true );
+  BOOST_CHECK_EQUAL( ( slce::detail::is_cpp17_input_iterator< explicit_bidirectional_iterator >::value ), true );
+  BOOST_CHECK_EQUAL( ( slce::detail::is_cpp17_input_iterator< implicit_bidirectional_iterator >::value ), true );
+  BOOST_CHECK_EQUAL( ( slce::detail::is_cpp17_input_iterator< explicit_random_access_iterator >::value ), true );
+  BOOST_CHECK_EQUAL( ( slce::detail::is_cpp17_input_iterator< implicit_random_access_iterator >::value ), true );
+}
+
+BOOST_AUTO_TEST_CASE(Cpp17ForwardIterator) {
+  BOOST_CHECK_EQUAL( ( slce::detail::is_cpp17_forward_iterator< base >::value ), false );
+  BOOST_CHECK_EQUAL( ( slce::detail::is_cpp17_forward_iterator< explicit_forward_iterator >::value ), true );
+  BOOST_CHECK_EQUAL( ( slce::detail::is_cpp17_forward_iterator< implicit_forward_iterator >::value ), true );
+  BOOST_CHECK_EQUAL( ( slce::detail::is_cpp17_forward_iterator< explicit_bidirectional_iterator >::value ), true );
+  BOOST_CHECK_EQUAL( ( slce::detail::is_cpp17_forward_iterator< implicit_bidirectional_iterator >::value ), true );
+  BOOST_CHECK_EQUAL( ( slce::detail::is_cpp17_forward_iterator< explicit_random_access_iterator >::value ), true );
+  BOOST_CHECK_EQUAL( ( slce::detail::is_cpp17_forward_iterator< implicit_random_access_iterator >::value ), true );
+}
+
+BOOST_AUTO_TEST_CASE(Cpp17BidirectionalIterator) {
+  BOOST_CHECK_EQUAL( ( slce::detail::is_cpp17_bidirectional_iterator< base >::value ), false );
+  BOOST_CHECK_EQUAL( ( slce::detail::is_cpp17_bidirectional_iterator< explicit_forward_iterator >::value ), false );
+  BOOST_CHECK_EQUAL( ( slce::detail::is_cpp17_bidirectional_iterator< implicit_forward_iterator >::value ), false );
+  BOOST_CHECK_EQUAL( ( slce::detail::is_cpp17_bidirectional_iterator< explicit_bidirectional_iterator >::value ), true );
+  BOOST_CHECK_EQUAL( ( slce::detail::is_cpp17_bidirectional_iterator< implicit_bidirectional_iterator >::value ), true );
+  BOOST_CHECK_EQUAL( ( slce::detail::is_cpp17_bidirectional_iterator< explicit_random_access_iterator >::value ), true );
+  BOOST_CHECK_EQUAL( ( slce::detail::is_cpp17_bidirectional_iterator< implicit_random_access_iterator >::value ), true );
+}
+
+BOOST_AUTO_TEST_CASE(Cpp17RandomAccessIterator) {
+  BOOST_CHECK_EQUAL( ( slce::detail::is_cpp17_random_access_iterator< base >::value ), false );
+  BOOST_CHECK_EQUAL( ( slce::detail::is_cpp17_random_access_iterator< explicit_forward_iterator >::value ), false );
+  BOOST_CHECK_EQUAL( ( slce::detail::is_cpp17_random_access_iterator< implicit_forward_iterator >::value ), false );
+  BOOST_CHECK_EQUAL( ( slce::detail::is_cpp17_random_access_iterator< explicit_bidirectional_iterator >::value ), false );
+  BOOST_CHECK_EQUAL( ( slce::detail::is_cpp17_random_access_iterator< implicit_bidirectional_iterator >::value ), false );
+  BOOST_CHECK_EQUAL( ( slce::detail::is_cpp17_random_access_iterator< explicit_random_access_iterator >::value ), true );
+  BOOST_CHECK_EQUAL( ( slce::detail::is_cpp17_random_access_iterator< implicit_random_access_iterator >::value ), true );
+}
+

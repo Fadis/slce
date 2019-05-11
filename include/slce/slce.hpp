@@ -128,7 +128,7 @@ namespace slce {
     template< typename ...Args >
     struct lifter {};
     template< typename T >
-    struct remove_cvr {
+    struct remove_cvref {
       using type = typename std::remove_cv< typename std::remove_reference< T >::type >::type;
     };
 
@@ -318,7 +318,7 @@ namespace slce {
     struct common_lvalue_reference {};
     template< typename T, typename U >
     struct common_lvalue_reference< T, U, typename voider<
-      decltype( false ? std::declval< typename remove_cvr< T >::type& >() : std::declval< typename remove_cvr< U >::type& >() )
+      decltype( false ? std::declval< typename remove_cvref< T >::type& >() : std::declval< typename remove_cvref< U >::type& >() )
     >::type > {
       using type = decltype( false ? std::declval< typename copy_cvr< U, T >::type& >() : std::declval< typename copy_cvr< T, U >::type& >() );
     };
@@ -341,8 +341,8 @@ namespace slce {
     template< typename T, typename U, typename Enable = void >
     struct common_const_reference {};
     template< typename T, typename U >
-    struct common_const_reference< T, U, typename voider< typename common_lvalue_reference< T, const typename remove_cvr< U >::type >::type >::type > {
-      using type = typename std::remove_reference< typename common_lvalue_reference< T, const typename remove_cvr< U >::type >::type >::type&&;
+    struct common_const_reference< T, U, typename voider< typename common_lvalue_reference< T, const typename remove_cvref< U >::type >::type >::type > {
+      using type = typename std::remove_reference< typename common_lvalue_reference< T, const typename remove_cvref< U >::type >::type >::type&&;
     };
     SLCE_BOOLEAN_TRAIT_T2(
       has_common_const_reference,
@@ -401,15 +401,15 @@ namespace slce {
 	has_ ## uqual ## _qual< U >::value \
       >::type, \
       typename std::basic_common_reference< \
-        typename remove_cvr< T >::type, \
-	typename remove_cvr< U >::type, \
+        typename remove_cvref< T >::type, \
+	typename remove_cvref< U >::type, \
         add_ ## tqual ## _qual_t, \
 	add_ ## uqual ## _qual_t \
       >::type \
     >::type > { \
       using type = typename std::basic_common_reference< \
-        typename remove_cvr< T >::type, \
-	typename remove_cvr< U >::type, \
+        typename remove_cvref< T >::type, \
+	typename remove_cvref< U >::type, \
         add_ ## tqual ## _qual_t, \
 	add_ ## uqual ## _qual_t \
       >::type; \
@@ -671,7 +671,7 @@ namespace slce {
     decltype( std::declval< const T& >() != std::declval< bool >() ),
     decltype( std::declval< bool >() != std::declval< const T& >() )
   >::type > : public std::integral_constant< bool,
-    is_movable< typename detail::remove_cvr< T >::type >::value &&
+    is_movable< typename detail::remove_cvref< T >::type >::value &&
     is_convertible_to< const typename std::remove_reference< T >::type&, bool >::value &&
     is_convertible_to< decltype( !std::declval< const T& >() ), bool >::value &&
     is_same< decltype( std::declval< const T& >() && std::declval< bool >() ), bool >::value &&
@@ -846,6 +846,211 @@ namespace slce {
   struct is_strict_weak_order : public is_relation< R, T, U > {};
   SLCE_HELPER( StrictWeakOrder, is_strict_weak_order )
 
+  namespace detail {
+    template< typename T >
+    using with_reference = T&;
+    template< typename T, typename Enable = void >
+    struct can_reference : public std::false_type {};
+    template< typename T >
+    struct can_reference< T, typename voider<
+      with_reference< T >
+    >::type > : public std::true_type {};
+    template< typename T, typename Enable = void >
+    struct is_dereferenceable : public std::false_type {};
+    template< typename T >
+    struct is_dereferenceable< T, typename voider<
+      decltype( *std::declval< T& >() )
+    >::type > : public can_reference< decltype( *std::declval< T& >() ) > {};
+  }
+#ifdef __cpp_lib_ranges
+  template< typename T >
+  using incrementable_traits = std::incrementable_traits< T >;
+  template< typename T >
+  using iter_difference_t = std::iter_difference_t< T >;
+  template< typename T >
+  using readable_traits = std::readable_traits< T >;
+  template< typename T >
+  using iter_value_t = std::iter_value_t< T >;
+  template< typename T >
+  using iter_reference_t = std::iter_reference_t< T >;
+#else
+  namespace detail {
+    template< typename T, typename Enable = void >
+    struct has_dereference_type : public std::false_type {};
+    template< typename T >
+    struct has_dereference_type< T, typename voider<
+      typename T::difference_type
+    >::type > : public std::true_type {};
+    template< typename T, typename Enable = void >
+    struct subtracted_type_is_integral : public std::false_type {};
+    template< typename T >
+    struct subtracted_type_is_integral< T, typename voider<
+      decltype( std::declval< const T& >() - std::declval< const T& >() )
+    >::type > : public std::is_integral< decltype( std::declval< const T& >() - std::declval< const T& >() ) > {};
+    template< typename T, typename Enable = void >
+    struct cond_value_type {};
+    template< typename T >
+    struct cond_value_type< T, typename std::enable_if<
+      std::is_object< T >::value
+    >::type > {
+      using value_type = typename std::remove_cv< T >::type;
+    };
+  }
+  template< typename, typename Enable = void >
+  struct incrementable_traits {};
+  template< typename T >
+  struct incrementable_traits< T*, typename std::enable_if<
+    std::is_object< T >::value
+  >::type > {
+    using difference_type = ptrdiff_t;
+  };
+  template< typename T >
+  struct incrementable_traits< const T > : incrementable_traits< T > {};
+  template< typename T >
+  struct incrementable_traits< T, typename std::enable_if<
+    detail::has_dereference_type< T >::value
+  >::type > {
+    using difference_type = typename T::difference_type;
+  };
+  template< typename T >
+  struct incrementable_traits< T, typename std::enable_if<
+    !detail::has_dereference_type< T >::value &&
+    detail::subtracted_type_is_integral< T >::value
+  >::type > {
+    using difference_type = std::make_signed_t< decltype( std::declval< T >() - std::declval< T >() ) >;
+  };
+  template< typename T, typename Enable = void >
+  struct iter_difference {};
+  template< typename T >
+  struct iter_difference< T, typename detail::voider<
+    typename std::iterator_traits< T >::difference_type
+  > > {
+    using type = typename std::iterator_traits< T >::difference_type;
+  };
+  template< typename T >
+  struct iter_difference< T, typename detail::voider<
+    typename incrementable_traits< T >::difference_type
+  > > {
+    using type = typename incrementable_traits< T >::difference_type;
+  };
+  template< typename T >
+  using iter_difference_t = typename iter_difference< T >::type;
+  template< typename T, typename Enable = void >
+  struct readable_traits {};
+  template< typename T >
+  struct readable_traits< T*, void > : public detail::cond_value_type< T > {};
+  template< typename T >
+  struct readable_traits< T, typename std::enable_if<
+    std::is_array< T >::value
+  >::type > {
+    using value_type = typename std::remove_cv< typename std::remove_extent_t< T >::type >::type;
+  };
+  template< typename T >
+  struct readable_traits< const T, void > : public readable_traits< T > {};
+  template< typename T >
+  struct readable_traits< T, typename detail::voider<
+    typename T::value_type
+  >::type > : public detail::cond_value_type< typename T::value_type > {};
+  template< typename T >
+  struct readable_traits< T, typename detail::voider<
+    typename T::element_type
+  >::type > : public detail::cond_value_type< typename T::element_type > {};
+  template< typename T, typename Enable = void >
+  struct iter_value {};
+  template< typename T >
+  struct iter_value< T, typename detail::voider<
+    typename std::iterator_traits< T >::value_type
+  > > {
+    using type = typename std::iterator_traits< T >::value_type;
+  };
+  template< typename T >
+  struct iter_value< T, typename detail::voider<
+    typename readable_traits< T >::difference_type
+  > > {
+    using type = typename readable_traits< T >::value_type;
+  };
+  template< typename T >
+  using iter_value_t = typename iter_value< T >::type;
+  template< typename T, typename Enable = void >
+  struct iter_reference {};
+  template< typename T >
+  struct iter_reference< T, typename std::enable_if<
+    detail::is_dereferenceable< T >::value
+  >::type > {
+    using type = decltype( *std::declval< T& >() );
+  };
+  template< typename T >
+  using iter_reference_t = typename iter_reference< T >::type;
+#endif
+  namespace detail {
+    template< typename T, typename Enable = void >
+    struct is_cpp17_iterator : public std::false_type {};
+    template< typename T >
+    struct is_cpp17_iterator< T, typename std::enable_if<
+      is_copyable< T >::value &&
+      can_reference< decltype( *std::declval< T >() ) >::value &&
+      is_same< decltype( ++std::declval< T >() ), T& >::value &&
+      can_reference< decltype( *std::declval< T >()++ ) >::value
+    >::type > : public std::true_type {};
+    template< typename T, typename Enable = void >
+    struct is_cpp17_input_iterator : public std::false_type {};
+    template< typename T >
+    struct is_cpp17_input_iterator< T, typename voider<
+      typename std::enable_if<
+        is_cpp17_iterator< T >::value &&
+        is_equality_comparable< T >::value &&
+	is_signed_integral< typename incrementable_traits< T >::difference_type >::value
+      >::type,
+      typename incrementable_traits< T >::difference_type,
+      typename readable_traits< T >::value_type,
+      typename common_reference<
+        iter_reference_t< T >&&,
+        typename readable_traits< T >::value_type&
+      >::type,
+      decltype( *std::declval< T >()++ ),
+      typename common_reference<
+        decltype( *std::declval< T >()++ )&&,
+        typename readable_traits< T >::value_type&
+      >::type
+    >::type > : public std::true_type {};
+    template< typename T, typename Enable = void >
+    struct is_cpp17_forward_iterator : public std::false_type {};
+    template< typename T >
+    struct is_cpp17_forward_iterator< T, typename std::enable_if<
+      is_cpp17_input_iterator< T >::value &&
+      is_constructible< T >::value &&
+      std::is_lvalue_reference< iter_reference_t< T > >::value &&
+      is_same<
+        typename remove_cvref< iter_reference_t< T > >::type,
+        typename readable_traits< T >::value_type
+      >::value &&
+      is_convertible_to< decltype( std::declval< T >()++ ), const T& >::value &&
+      is_same< decltype( *std::declval< T >()++ ), iter_reference_t< T > >::value
+    >::type > : public std::true_type {};
+    template< typename T, typename Enable = void >
+    struct is_cpp17_bidirectional_iterator : public std::false_type {};
+    template< typename T >
+    struct is_cpp17_bidirectional_iterator< T, typename std::enable_if<
+      is_cpp17_forward_iterator< T >::value &&
+      is_same< decltype( --std::declval< T >() ), T& >::value &&
+      is_convertible_to< decltype( std::declval< T >()-- ), const T& >::value &&
+      is_same< decltype( *std::declval< T >()-- ), iter_reference_t< T > >::value
+    >::type > : public std::true_type {};
+    template< typename T, typename Enable = void >
+    struct is_cpp17_random_access_iterator : public std::false_type {};
+    template< typename T >
+    struct is_cpp17_random_access_iterator< T, typename std::enable_if<
+      is_cpp17_bidirectional_iterator< T >::value &&
+      is_strict_totally_ordered< T >::value &&
+      is_same< decltype( std::declval< T >() += std::declval< typename incrementable_traits< T >::difference_type >() ), T& >::value &&
+      is_same< decltype( std::declval< T >() -= std::declval< typename incrementable_traits< T >::difference_type >() ), T& >::value &&
+      is_same< decltype( std::declval< T >() + std::declval< typename incrementable_traits< T >::difference_type >() ), T >::value &&
+      is_same< decltype( std::declval< typename incrementable_traits< T >::difference_type >() + std::declval< T >() ), T >::value &&
+      is_same< decltype( std::declval< T >() - std::declval< typename incrementable_traits< T >::difference_type >() ), T >::value &&
+      is_same< decltype( std::declval< T >() - std::declval< T >() ), typename incrementable_traits< T >::difference_type >::value &&
+      is_convertible_to< iter_reference_t< T >, decltype( std::declval< T >()[ std::declval< typename incrementable_traits< T >::difference_type >() ] ) >::value
+    >::type > : public std::true_type {};
+  }
 }
 #endif
 
