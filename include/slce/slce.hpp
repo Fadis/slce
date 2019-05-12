@@ -689,23 +689,25 @@ namespace slce {
   > {};
   SLCE_HELPER( Boolean, is_boolean )
 
-  template< typename T, typename U, typename Enable = void >
-  struct is_weakly_equality_comparable_with : public std::false_type {};
-  template< typename T, typename U >
-  struct is_weakly_equality_comparable_with< T, U, typename detail::voider<
-    decltype( std::declval< const typename std::remove_reference< T >::type& >() == std::declval< const typename std::remove_reference< U >::type& >() ),
-    decltype( std::declval< const typename std::remove_reference< T >::type& >() != std::declval< const typename std::remove_reference< U >::type& >() ),
-    decltype( std::declval< const typename std::remove_reference< U >::type& >() == std::declval< const typename std::remove_reference< T >::type& >() ),
-    decltype( std::declval< const typename std::remove_reference< U >::type& >() != std::declval< const typename std::remove_reference< T >::type& >() )
-  >::type > : public std::integral_constant< bool,
-    std::is_same< bool, decltype( std::declval< const typename std::remove_reference< T >::type& >() == std::declval< const typename std::remove_reference< U >::type& >() ) >::value &&
-    std::is_same< bool, decltype( std::declval< const typename std::remove_reference< T >::type& >() != std::declval< const typename std::remove_reference< U >::type& >() ) >::value &&
-    std::is_same< bool, decltype( std::declval< const typename std::remove_reference< U >::type& >() == std::declval< const typename std::remove_reference< T >::type& >() ) >::value &&
-    std::is_same< bool, decltype( std::declval< const typename std::remove_reference< U >::type& >() != std::declval< const typename std::remove_reference< T >::type& >() ) >::value
-  > {};
+  namespace detail {
+    template< typename T, typename U, typename Enable = void >
+    struct is_weakly_equality_comparable_with : public std::false_type {};
+    template< typename T, typename U >
+    struct is_weakly_equality_comparable_with< T, U, typename detail::voider<
+      decltype( std::declval< const typename std::remove_reference< T >::type& >() == std::declval< const typename std::remove_reference< U >::type& >() ),
+      decltype( std::declval< const typename std::remove_reference< T >::type& >() != std::declval< const typename std::remove_reference< U >::type& >() ),
+      decltype( std::declval< const typename std::remove_reference< U >::type& >() == std::declval< const typename std::remove_reference< T >::type& >() ),
+      decltype( std::declval< const typename std::remove_reference< U >::type& >() != std::declval< const typename std::remove_reference< T >::type& >() )
+    >::type > : public std::integral_constant< bool,
+      std::is_same< bool, decltype( std::declval< const typename std::remove_reference< T >::type& >() == std::declval< const typename std::remove_reference< U >::type& >() ) >::value &&
+      std::is_same< bool, decltype( std::declval< const typename std::remove_reference< T >::type& >() != std::declval< const typename std::remove_reference< U >::type& >() ) >::value &&
+      std::is_same< bool, decltype( std::declval< const typename std::remove_reference< U >::type& >() == std::declval< const typename std::remove_reference< T >::type& >() ) >::value &&
+      std::is_same< bool, decltype( std::declval< const typename std::remove_reference< U >::type& >() != std::declval< const typename std::remove_reference< T >::type& >() ) >::value
+    > {};
+  }
 
   template< typename T >
-  struct is_equality_comparable : public is_weakly_equality_comparable_with< T, T > {};
+  struct is_equality_comparable : public detail::is_weakly_equality_comparable_with< T, T > {};
   SLCE_HELPER( EqualityComparable, is_equality_comparable )
 
   template< typename T, typename U >
@@ -716,7 +718,7 @@ namespace slce {
     is_equality_comparable<
       typename common_reference< const typename std::remove_reference< T >::type&, const typename std::remove_reference< U >::type& >::type
     >::value &&
-    is_weakly_equality_comparable_with< T, U >::value
+    detail::is_weakly_equality_comparable_with< T, U >::value
   > {};
   SLCE_HELPER( EqualityComparableWith, is_equality_comparable_with )
 
@@ -921,18 +923,33 @@ namespace slce {
   >::type > {
     using difference_type = std::make_signed_t< decltype( std::declval< T >() - std::declval< T >() ) >;
   };
+  namespace detail {
+    template< typename T, typename Enable = void >
+    struct has_iterator_traits_difference_type : public std::false_type {};
+    template< typename T >
+    struct has_iterator_traits_difference_type< T, typename detail::voider<
+      typename std::iterator_traits< T >::difference_type
+    >::type > : public std::true_type {};
+    template< typename T, typename Enable = void >
+    struct has_incrementable_traits_difference_type : public std::false_type {};
+    template< typename T >
+    struct has_incrementable_traits_difference_type< T, typename detail::voider<
+      typename incrementable_traits< T >::difference_type
+    >::type > : public std::true_type {};
+  }
   template< typename T, typename Enable = void >
   struct iter_difference {};
   template< typename T >
-  struct iter_difference< T, typename detail::voider<
-    typename std::iterator_traits< T >::difference_type
-  > > {
+  struct iter_difference< T, typename std::enable_if<
+    detail::has_iterator_traits_difference_type< T >::value
+  >::type > {
     using type = typename std::iterator_traits< T >::difference_type;
   };
   template< typename T >
-  struct iter_difference< T, typename detail::voider<
-    typename incrementable_traits< T >::difference_type
-  > > {
+  struct iter_difference< T, typename std::enable_if<
+    !detail::has_iterator_traits_difference_type< T >::value &&
+    detail::has_incrementable_traits_difference_type< T >::value
+  >::type > {
     using type = typename incrementable_traits< T >::difference_type;
   };
   template< typename T >
@@ -957,17 +974,32 @@ namespace slce {
   struct readable_traits< T, typename detail::voider<
     typename T::element_type
   >::type > : public detail::cond_value_type< typename T::element_type > {};
+  namespace detail {
+    template< typename T, typename Enable = void >
+    struct has_iterator_traits_value_type : public std::false_type {};
+    template< typename T >
+    struct has_iterator_traits_value_type< T, typename detail::voider<
+      typename std::iterator_traits< T >::value_type
+    >::type > : public std::true_type {};
+    template< typename T, typename Enable = void >
+    struct has_readable_traits_value_type : public std::false_type {};
+    template< typename T >
+    struct has_readable_traits_value_type< T, typename detail::voider<
+      typename readable_traits< T >::value_type
+    >::type > : public std::true_type {};
+  }
   template< typename T, typename Enable = void >
   struct iter_value {};
   template< typename T >
-  struct iter_value< T, typename detail::voider<
-    typename std::iterator_traits< T >::value_type
+  struct iter_value< T, typename std::enable_if<
+    detail::has_iterator_traits_value_type< T >::value
   >::type > {
     using type = typename std::iterator_traits< T >::value_type;
   };
   template< typename T >
-  struct iter_value< T, typename detail::voider<
-    typename readable_traits< T >::value_type
+  struct iter_value< T, typename std::enable_if<
+    !detail::has_iterator_traits_value_type< T >::value &&
+    detail::has_readable_traits_value_type< T >::value
   >::type > {
     using type = typename readable_traits< T >::value_type;
   };
@@ -1135,6 +1167,51 @@ namespace slce {
       std::forward< T >( std::declval< T&& >() ) )
   >::type > : public std::true_type {};
   SLCE_HELPER( Writable, is_writable )
+
+  template< typename T, typename Enable = void >
+  struct is_weakly_incrementable : public std::false_type {};
+  template< typename T >
+  struct is_weakly_incrementable< T, typename detail::voider<
+    typename std::enable_if<
+      is_semiregular< T >::value &&
+      is_signed_integral< iter_difference_t< T > >::value &&
+      is_same< decltype( ++std::declval< T >() ), T& >::value
+    >::type,
+    iter_difference_t< T >,
+    decltype( std::declval< T >()++ )
+  >::type > : public std::true_type {};
+  SLCE_HELPER( WeaklyIncrementable, is_weakly_incrementable )
+
+  template< typename T, typename Enable = void >
+  struct is_incrementable : public std::false_type {};
+  template< typename T >
+  struct is_incrementable< T, typename std::enable_if<
+    is_regular< T >::value &&
+    is_weakly_incrementable< T >::value &&
+    is_same< decltype( std::declval< T >()++ ), T >::value
+  >::type > : public std::true_type {};
+  SLCE_HELPER( Incrementable, is_incrementable )
+
+  template< typename T, typename Enable = void >
+  struct is_iterator : public std::false_type {};
+  template< typename T >
+  struct is_iterator< T, typename std::enable_if<
+    detail::can_reference< decltype( *std::declval< T >() ) >::value &&
+    is_weakly_incrementable< T >::value
+  >::type > : public std::true_type {};
+  SLCE_HELPER( Iterator, is_iterator )
+
+
+  template< typename S, typename I, typename Enable = void >
+  struct is_sentinel : public std::false_type {};
+  template< typename S, typename I >
+  struct is_sentinel< S, I, typename std::enable_if<
+    is_semiregular< S >::value &&
+    is_iterator< I >::value &&
+    detail::is_weakly_equality_comparable_with< S, I >::value
+  >::type > : public std::true_type {};
+  SLCE_HELPER( Sentinel, is_sentinel )
+
 }
 #endif
 
