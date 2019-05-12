@@ -1170,3 +1170,22 @@ BOOST_AUTO_TEST_CASE(Cpp17RandomAccessIterator) {
   BOOST_CHECK_EQUAL( ( slce::detail::is_cpp17_random_access_iterator< implicit_random_access_iterator >::value ), true );
 }
 
+BOOST_AUTO_TEST_CASE(Readable) {
+  BOOST_CHECK_EQUAL( ( slce::is_readable< base >::value ), false );
+  BOOST_CHECK_EQUAL( ( slce::is_readable< explicit_forward_iterator >::value ), true );
+  BOOST_CHECK_EQUAL( ( slce::is_readable< implicit_forward_iterator >::value ), true );
+  BOOST_CHECK_EQUAL( ( slce::is_readable< explicit_bidirectional_iterator >::value ), true );
+  BOOST_CHECK_EQUAL( ( slce::is_readable< implicit_bidirectional_iterator >::value ), true );
+  BOOST_CHECK_EQUAL( ( slce::is_readable< explicit_random_access_iterator >::value ), true );
+  BOOST_CHECK_EQUAL( ( slce::is_readable< implicit_random_access_iterator >::value ), true );
+}
+
+BOOST_AUTO_TEST_CASE(Writable) {
+  BOOST_CHECK_EQUAL( ( slce::is_writable< base, int >::value ), false );
+  BOOST_CHECK_EQUAL( ( slce::is_writable< explicit_forward_iterator, int >::value ), true );
+  BOOST_CHECK_EQUAL( ( slce::is_writable< implicit_forward_iterator, int >::value ), true );
+  BOOST_CHECK_EQUAL( ( slce::is_writable< explicit_bidirectional_iterator, int >::value ), true );
+  BOOST_CHECK_EQUAL( ( slce::is_writable< implicit_bidirectional_iterator, int >::value ), true );
+  BOOST_CHECK_EQUAL( ( slce::is_writable< explicit_random_access_iterator, int >::value ), true );
+  BOOST_CHECK_EQUAL( ( slce::is_writable< implicit_random_access_iterator, int >::value ), true );
+}

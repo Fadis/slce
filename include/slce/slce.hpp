@@ -873,6 +873,8 @@ namespace slce {
   using iter_value_t = std::iter_value_t< T >;
   template< typename T >
   using iter_reference_t = std::iter_reference_t< T >;
+  template< typename T >
+  using iter_rvalue_reference_t = std::iter_rvalue_reference_t< T >;
 #else
   namespace detail {
     template< typename T, typename Enable = void >
@@ -960,13 +962,13 @@ namespace slce {
   template< typename T >
   struct iter_value< T, typename detail::voider<
     typename std::iterator_traits< T >::value_type
-  > > {
+  >::type > {
     using type = typename std::iterator_traits< T >::value_type;
   };
   template< typename T >
   struct iter_value< T, typename detail::voider<
-    typename readable_traits< T >::difference_type
-  > > {
+    typename readable_traits< T >::value_type
+  >::type > {
     using type = typename readable_traits< T >::value_type;
   };
   template< typename T >
@@ -981,6 +983,65 @@ namespace slce {
   };
   template< typename T >
   using iter_reference_t = typename iter_reference< T >::type;
+  namespace detail {
+    template< typename T >
+    auto iter_move_( T iter ) -> decltype( iter_move( std::declval< T >() ) ) {
+      return iter_move( iter );
+    }
+    template< typename T, typename Enable = void >
+    struct has_specialized_iter_move : public std::false_type {};
+    template< typename T >
+    struct has_specialized_iter_move< T, typename detail::voider<
+      decltype( iter_move_( std::declval< T >() ) )
+    >::type > : public std::true_type {};
+    template< typename T, typename Enable = void >
+    struct dereferenceable_as_lvalue : public std::false_type {};
+    template< typename T >
+    struct dereferenceable_as_lvalue< T, typename std::enable_if<
+      std::is_lvalue_reference< decltype( *std::declval< T >() ) >::value
+    >::type > : public std::true_type {};
+    template< typename T, typename Enable = void >
+    struct dereferenceable_as_rvalue : public std::false_type {};
+    template< typename T >
+    struct dereferenceable_as_rvalue< T, typename std::enable_if<
+      !std::is_lvalue_reference< decltype( *std::declval< T >() ) >::value
+    >::type > : public std::true_type {};
+  }
+  namespace range {
+    template< typename T >
+    auto iter_move( T iter ) -> typename std::enable_if<
+      detail::has_specialized_iter_move< T >::value,
+      decltype( detail::iter_move_( std::declval< T >() ) )
+    >::type {
+      return detail::iter_move_( iter );
+    }
+    template< typename T >
+    auto iter_move( T iter ) -> typename std::enable_if<
+      !detail::has_specialized_iter_move< T >::value &&
+      detail::dereferenceable_as_lvalue< T >::value,
+      decltype( std::move( *std::declval< T >() ) )
+    >::type {
+      return std::move( *iter );
+    }
+    template< typename T >
+    auto iter_move( T iter ) -> typename std::enable_if<
+      !detail::has_specialized_iter_move< T >::value &&
+      detail::dereferenceable_as_rvalue< T >::value,
+      decltype( *std::declval< T >() )
+    >::type {
+      return *iter;
+    }
+  }
+  template< typename T, typename Enable = void >
+  struct iter_rvalue_reference {};
+  template< typename T >
+  struct iter_rvalue_reference< T, typename detail::voider<
+    decltype( range::iter_move( std::declval< T& >() ) )
+  >::type > {
+    using type = decltype( range::iter_move( std::declval< T& >() ) );
+  };
+  template< typename T >
+  using iter_rvalue_reference_t = typename iter_rvalue_reference< T >::type;
 #endif
   namespace detail {
     template< typename T, typename Enable = void >
@@ -1051,6 +1112,29 @@ namespace slce {
       is_convertible_to< iter_reference_t< T >, decltype( std::declval< T >()[ std::declval< typename incrementable_traits< T >::difference_type >() ] ) >::value
     >::type > : public std::true_type {};
   }
+
+  template< typename T, typename Enable = void >
+  struct is_readable : public std::false_type {};
+  template< typename T >
+  struct is_readable< T, typename detail::voider<
+    iter_value_t< T >,
+    iter_reference_t< T >,
+    iter_rvalue_reference_t< T >
+  >::type > : public std::true_type {};
+  SLCE_HELPER( Readable, is_readable )
+
+  template< typename Out, typename T, typename Enable = void >
+  struct is_writable : public std::false_type {};
+  template< typename Out, typename T >
+  struct is_writable< Out, T, typename detail::voider<
+    decltype( *std::declval< Out&& >() = std::forward< T >( std::declval< T&& >() ) ),
+    decltype( *std::forward< Out >( std::declval< Out&& >() ) = std::forward< T >( std::declval< T&& >() ) ),
+    decltype( const_cast< const iter_reference_t< Out >&& >( *std::declval< Out&& >() ) =
+      std::forward< T >( std::declval< T&& >() ) ),
+    decltype( const_cast< const iter_reference_t< Out >&& >( *std::forward< Out >( std::declval< Out&& >() ) ) =
+      std::forward< T >( std::declval< T&& >() ) )
+  >::type > : public std::true_type {};
+  SLCE_HELPER( Writable, is_writable )
 }
 #endif
 
