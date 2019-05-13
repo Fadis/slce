@@ -428,7 +428,24 @@ template< typename T >
 bool operator!=( const sentinel< T >&, const T& ) { return false; }
 template< typename T >
 bool operator!=( const T&, const sentinel< T >& ) { return false; }
-
+template< typename T >
+struct sized_sentinel {};
+template< typename T >
+bool operator==( const sized_sentinel< T >&, const sized_sentinel< T >& ) { return true; }
+template< typename T >
+bool operator==( const sized_sentinel< T >&, const T& ) { return true; }
+template< typename T >
+bool operator==( const T&, const sized_sentinel< T >& ) { return true; }
+template< typename T >
+bool operator!=( const sized_sentinel< T >&, const sized_sentinel< T >& ) { return false; }
+template< typename T >
+bool operator!=( const sized_sentinel< T >&, const T& ) { return false; }
+template< typename T >
+bool operator!=( const T&, const sized_sentinel< T >& ) { return false; }
+template< typename T >
+auto operator-( const T &i, const sized_sentinel< T >& ) { return i - i; }
+template< typename T >
+auto operator-( const sized_sentinel< T >&, const T &i ) { return i - i; }
 
 BOOST_AUTO_TEST_CASE(Same) {
   BOOST_CHECK_EQUAL( ( slce::is_same< base, base >::value ), true );
@@ -1250,3 +1267,26 @@ BOOST_AUTO_TEST_CASE(Sentinel) {
   BOOST_CHECK_EQUAL( ( slce::is_sentinel< sentinel< explicit_random_access_iterator >, explicit_random_access_iterator >::value ), true );
   BOOST_CHECK_EQUAL( ( slce::is_sentinel< sentinel< implicit_random_access_iterator >, implicit_random_access_iterator >::value ), true );
 }
+
+BOOST_AUTO_TEST_CASE(SizedSentinel) {
+  BOOST_CHECK_EQUAL( ( slce::is_sized_sentinel< base, base >::value ), false );
+  BOOST_CHECK_EQUAL( ( slce::is_sized_sentinel< explicit_forward_iterator, explicit_forward_iterator >::value ), true );
+  BOOST_CHECK_EQUAL( ( slce::is_sized_sentinel< implicit_forward_iterator, implicit_forward_iterator >::value ), true );
+  BOOST_CHECK_EQUAL( ( slce::is_sized_sentinel< explicit_bidirectional_iterator, explicit_bidirectional_iterator >::value ), true );
+  BOOST_CHECK_EQUAL( ( slce::is_sized_sentinel< implicit_bidirectional_iterator, implicit_bidirectional_iterator >::value ), true );
+  BOOST_CHECK_EQUAL( ( slce::is_sized_sentinel< explicit_random_access_iterator, explicit_random_access_iterator >::value ), true );
+  BOOST_CHECK_EQUAL( ( slce::is_sized_sentinel< implicit_random_access_iterator, implicit_random_access_iterator >::value ), true );
+  BOOST_CHECK_EQUAL( ( slce::is_sized_sentinel< sentinel< explicit_forward_iterator >, explicit_forward_iterator >::value ), false );
+  BOOST_CHECK_EQUAL( ( slce::is_sized_sentinel< sentinel< implicit_forward_iterator >, implicit_forward_iterator >::value ), false );
+  BOOST_CHECK_EQUAL( ( slce::is_sized_sentinel< sentinel< explicit_bidirectional_iterator >, explicit_bidirectional_iterator >::value ), false );
+  BOOST_CHECK_EQUAL( ( slce::is_sized_sentinel< sentinel< implicit_bidirectional_iterator >, implicit_bidirectional_iterator >::value ), false );
+  BOOST_CHECK_EQUAL( ( slce::is_sized_sentinel< sentinel< explicit_random_access_iterator >, explicit_random_access_iterator >::value ), false );
+  BOOST_CHECK_EQUAL( ( slce::is_sized_sentinel< sentinel< implicit_random_access_iterator >, implicit_random_access_iterator >::value ), false );
+  BOOST_CHECK_EQUAL( ( slce::is_sized_sentinel< sized_sentinel< explicit_forward_iterator >, explicit_forward_iterator >::value ), true );
+  BOOST_CHECK_EQUAL( ( slce::is_sized_sentinel< sized_sentinel< implicit_forward_iterator >, implicit_forward_iterator >::value ), true );
+  BOOST_CHECK_EQUAL( ( slce::is_sized_sentinel< sized_sentinel< explicit_bidirectional_iterator >, explicit_bidirectional_iterator >::value ), true );
+  BOOST_CHECK_EQUAL( ( slce::is_sized_sentinel< sized_sentinel< implicit_bidirectional_iterator >, implicit_bidirectional_iterator >::value ), true );
+  BOOST_CHECK_EQUAL( ( slce::is_sized_sentinel< sized_sentinel< explicit_random_access_iterator >, explicit_random_access_iterator >::value ), true );
+  BOOST_CHECK_EQUAL( ( slce::is_sized_sentinel< sized_sentinel< implicit_random_access_iterator >, implicit_random_access_iterator >::value ), true );
+}
+

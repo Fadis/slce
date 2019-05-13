@@ -1201,7 +1201,6 @@ namespace slce {
   >::type > : public std::true_type {};
   SLCE_HELPER( Iterator, is_iterator )
 
-
   template< typename S, typename I, typename Enable = void >
   struct is_sentinel : public std::false_type {};
   template< typename S, typename I >
@@ -1211,6 +1210,28 @@ namespace slce {
     detail::is_weakly_equality_comparable_with< S, I >::value
   >::type > : public std::true_type {};
   SLCE_HELPER( Sentinel, is_sentinel )
+
+
+  namespace range {
+#if defined(__cpp_lib_ranges) && defined(__cpp_variable_templates)
+    template< typename S, typename I >
+    struct disable_sized_sentinel : public std::integral_constant< bool, std::disable_sized_sentinel< S, I > > {};
+#else
+    template< typename S, typename I >
+    struct disable_sized_sentinel : public std::false_type {};
+#endif
+  }
+  
+  template< typename S, typename I, typename Enable = void >
+  struct is_sized_sentinel : public std::false_type {};
+  template< typename S, typename I >
+  struct is_sized_sentinel< S, I, typename std::enable_if<
+    is_sentinel< S, I >::value &&
+    !range::disable_sized_sentinel< typename std::remove_cv< S >::type, typename std::remove_cv< I >::type >::value &&
+    is_same< decltype( std::declval< const S& >() - std::declval< const I& >() ), iter_difference_t< I > >::value &&
+    is_same< decltype( std::declval< const I& >() - std::declval< const S& >() ), iter_difference_t< I > >::value
+  >::type > : public std::true_type {};
+  SLCE_HELPER( SizedSentinel, is_sized_sentinel )
 
 }
 #endif
