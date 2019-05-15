@@ -23,6 +23,7 @@
 #ifndef SLCE_STANDARD_LIBRARY_CONCEPTS_EMULATION_LIBRARY_HPP
 #define SLCE_STANDARD_LIBRARY_CONCEPTS_EMULATION_LIBRARY_HPP
 #include <type_traits>
+#include <iterator>
 #ifdef __cpp_lib_ranges
 #include <range>
 #endif
@@ -737,7 +738,6 @@ namespace slce {
     std::is_same< bool, decltype( std::declval< const typename std::remove_reference< T >::type& >() <= std::declval< const typename std::remove_reference< T >::type& >() ) >::value &&
     std::is_same< bool, decltype( std::declval< const typename std::remove_reference< T >::type& >() >= std::declval< const typename std::remove_reference< T >::type& >() ) >::value
   > {};
-  ///
   SLCE_HELPER( StrictTotallyOrdered, is_strict_totally_ordered )
 
   template< typename T, typename U, typename Enable = void >
@@ -765,7 +765,6 @@ namespace slce {
     std::is_same< bool, decltype( std::declval< const typename std::remove_reference< U >::type& >() <= std::declval< const typename std::remove_reference< T >::type& >() ) >::value &&
     std::is_same< bool, decltype( std::declval< const typename std::remove_reference< U >::type& >() >= std::declval< const typename std::remove_reference< T >::type& >() ) >::value
   > {};
-  ///
   SLCE_HELPER( StrictTotallyOrderedWith, is_strict_totally_ordered_with )
 
   template< typename T >
@@ -904,7 +903,9 @@ namespace slce {
   struct incrementable_traits {};
   template< typename T >
   struct incrementable_traits< T*, typename std::enable_if<
-    std::is_object< T >::value
+    std::is_object< T >::value &&
+    !( !detail::has_dereference_type< T >::value &&
+    detail::subtracted_type_is_integral< T >::value )
   >::type > {
     using difference_type = ptrdiff_t;
   };
@@ -1221,7 +1222,7 @@ namespace slce {
     struct disable_sized_sentinel : public std::false_type {};
 #endif
   }
-  
+ 
   template< typename S, typename I, typename Enable = void >
   struct is_sized_sentinel : public std::false_type {};
   template< typename S, typename I >
@@ -1233,6 +1234,138 @@ namespace slce {
   >::type > : public std::true_type {};
   SLCE_HELPER( SizedSentinel, is_sized_sentinel )
 
+  namespace detail {
+    template< typename T, typename Enable = void >
+    struct has_iterator_concept : public std::false_type {};
+    template< typename T >
+    struct has_iterator_concept< T, typename voider< typename T::iterator_concept >::type > : public std::true_type {};
+    template< typename T, typename Enable = void >
+    struct has_iterator_category : public std::false_type {};
+    template< typename T >
+    struct has_iterator_category< T, typename voider< typename T::iterator_category >::type > : public std::true_type {};
+    // Note: this trait does not work like ITER_CONCEPT(I) described in n4810 section 22.3.4.1-1.
+    // Since there are no way to detect primary template unintrusively, slce iter_concept just try to find iterator concept regardless of the iterator_traits is primary template or not.
+    template< typename T, typename Enable = void >
+    struct iter_concept {};
+    template< typename T >
+    struct iter_concept< T, typename std::enable_if<
+      has_iterator_concept< std::iterator_traits< T > >::value
+    >::type > {
+      using type = typename std::iterator_traits< T >::iterator_concept;
+    };
+    template< typename T >
+    struct iter_concept< T, typename std::enable_if<
+      !has_iterator_concept< std::iterator_traits< T > >::value &&
+      has_iterator_concept< T >::value
+    >::type > {
+      using type = typename T::iterator_concept;
+    };
+    template< typename T >
+    struct iter_concept< T, typename std::enable_if<
+      !has_iterator_concept< std::iterator_traits< T > >::value &&
+      !has_iterator_concept< T >::value &&
+      has_iterator_category< std::iterator_traits< T > >::value
+    >::type > {
+      using type = typename std::iterator_traits< T >::iterator_category;
+    };
+    template< typename T >
+    struct iter_concept< T, typename std::enable_if<
+      !has_iterator_concept< std::iterator_traits< T > >::value &&
+      !has_iterator_concept< T >::value &&
+      !has_iterator_category< std::iterator_traits< T > >::value &&
+      has_iterator_category< T >::value
+    >::type > {
+      using type = typename T::iterator_category;
+    };
+    template< typename T >
+    struct iter_concept< T, typename std::enable_if<
+      !has_iterator_concept< std::iterator_traits< T > >::value &&
+      !has_iterator_concept< T >::value &&
+      !has_iterator_category< std::iterator_traits< T > >::value &&
+      !has_iterator_category< T >::value &&
+      is_iterator< T >::value
+    >::type > {
+      using type = std::random_access_iterator_tag;
+    };
+  }
+
+  template< typename T, typename Enable = void >
+  struct is_input_iterator : public std::false_type {};
+  template< typename T >
+  struct is_input_iterator< T, typename std::enable_if<
+    is_iterator< T >::value &&
+    is_readable< T >::value &&
+    is_derived_from< typename detail::iter_concept< T >::type, std::input_iterator_tag >::value
+  >::type > : public std::true_type {};
+  SLCE_HELPER( InputIterator, is_input_iterator )
+  
+  template< typename I, typename T, typename Enable = void >
+  struct is_output_iterator : public std::false_type {};
+  template< typename I, typename T >
+  struct is_output_iterator< I, T, typename detail::voider<
+    typename std::enable_if<
+      is_iterator< I >::value &&
+      is_writable< I, T >::value
+    >::type,
+    decltype( *std::declval< I >()++ = std::forward< T >( std::declval< T&& >() ) )
+  >::type > : public std::true_type {};
+  SLCE_HELPER( OutputIterator, is_output_iterator )
+
+  template< typename T, typename Enable = void >
+  struct is_forward_iterator : public std::false_type {};
+  template< typename T >
+  struct is_forward_iterator< T, typename std::enable_if<
+    is_input_iterator< T >::value &&
+    is_derived_from< typename detail::iter_concept< T >::type, std::forward_iterator_tag >::value &&
+    is_incrementable< T >::value &&
+    is_sentinel< T, T >::value
+  >::type > : public std::true_type {};
+  SLCE_HELPER( ForwardIterator, is_forward_iterator )
+
+  template< typename T, typename Enable = void >
+  struct is_bidirectional_iterator : public std::false_type {};
+  template< typename T >
+  struct is_bidirectional_iterator< T, typename std::enable_if<
+    is_forward_iterator< T >::value &&
+    is_derived_from< typename detail::iter_concept< T >::type, std::bidirectional_iterator_tag >::value &&
+    is_same< decltype( --std::declval< T >() ), T& >::value &&
+    is_same< decltype( std::declval< T >()-- ), T >::value
+  >::type > : public std::true_type {};
+  SLCE_HELPER( BidirectionalIterator, is_bidirectional_iterator )
+
+  template< typename T, typename Enable = void >
+  struct is_random_access_iterator : public std::false_type {};
+  template< typename T >
+  struct is_random_access_iterator< T, typename std::enable_if<
+    is_bidirectional_iterator< T >::value &&
+    is_derived_from< typename detail::iter_concept< T >::type, std::random_access_iterator_tag >::value &&
+    is_strict_totally_ordered< T >::value &&
+    is_sized_sentinel< T, T >::value &&
+    is_same< decltype( std::declval< T& >() += std::declval< iter_difference_t< T > >() ), T& >::value &&
+    is_same< decltype( std::declval< const T& >() + std::declval< iter_difference_t< T > >() ), T >::value &&
+    is_same< decltype( std::declval< iter_difference_t< T > >() + std::declval< const T& >() ), T >::value &&
+    is_same< decltype( std::declval< T& >() -= std::declval< iter_difference_t< T > >() ), T& >::value &&
+    is_same< decltype( std::declval< const T& >() - std::declval< iter_difference_t< T > >() ), T >::value &&
+    is_same< decltype( std::declval< const T& >()[ std::declval< iter_difference_t< T > >() ] ), iter_reference_t< T > >::value
+  >::type > : public std::true_type {};
+  SLCE_HELPER( RandomAccessIterator, is_random_access_iterator )
+
+#ifdef __cpp_lib_ranges
+  using contiguous_iterator_tag = std::contiguous_iterator_tag;
+#else
+  struct contiguous_iterator_tag : public std::random_access_iterator_tag {};
+#endif
+
+  template< typename T, typename Enable = void >
+  struct is_contiguous_iterator : public std::false_type {};
+  template< typename T >
+  struct is_contiguous_iterator< T, typename std::enable_if<
+    is_random_access_iterator< T >::value &&
+    is_derived_from< typename detail::iter_concept< T >::type, contiguous_iterator_tag >::value &&
+    std::is_lvalue_reference< iter_reference_t< T > >::value &&
+    is_same< iter_value_t< T >, typename detail::remove_cvref< iter_reference_t< T > >::type >::value 
+  >::type > : public std::true_type {};
+  SLCE_HELPER( ContiguousIterator, is_contiguous_iterator )
 }
 #endif
 

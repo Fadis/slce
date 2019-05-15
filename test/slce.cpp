@@ -216,16 +216,13 @@ struct relation {
 };
 struct implicit_input_iterator {
   using value_type = int;
-  int &operator*() const {
-    static int value = 0;
-    return value;
+  int operator*() const {
+    return 0;
   }
   implicit_input_iterator &operator++() {
     return *this;
   }
-  implicit_input_iterator operator++(int) {
-    return *this;
-  }
+  void operator++(int) {}
 };
 bool operator==( const implicit_input_iterator&, const implicit_input_iterator& ) { return true; }
 bool operator!=( const implicit_input_iterator&, const implicit_input_iterator& ) { return false; }
@@ -234,21 +231,20 @@ struct explicit_input_iterator {
   using value_type = int;
   using difference_type = int;
   using pointer = int*;
-  using reference = int&;
-  int &operator*() const {
-    static int value = 0;
-    return value;
+  using reference = int;
+  int operator*() const {
+    return 0;
   }
   explicit_input_iterator &operator++() {
     return *this;
   }
-  explicit_input_iterator operator++(int) {
-    return *this;
-  }
+  void operator++(int) {}
 };
 bool operator==( const explicit_input_iterator&, const explicit_input_iterator& ) { return true; }
 bool operator!=( const explicit_input_iterator&, const explicit_input_iterator& ) { return false; }
 int operator-( const explicit_input_iterator&, const explicit_input_iterator& ) { return 0; }
+using implicit_non_output_iterator = implicit_input_iterator;
+using explicit_non_output_iterator = explicit_input_iterator;
 struct implicit_forward_iterator {
   using value_type = int;
   int &operator*() const {
@@ -281,6 +277,8 @@ struct explicit_forward_iterator {
     return *this;
   }
 };
+using implicit_output_iterator = implicit_forward_iterator;
+using explicit_output_iterator = explicit_forward_iterator;
 bool operator==( const explicit_forward_iterator&, const explicit_forward_iterator& ) { return true; }
 bool operator!=( const explicit_forward_iterator&, const explicit_forward_iterator& ) { return false; }
 int operator-( const explicit_forward_iterator&, const explicit_forward_iterator& ) { return 0; }
@@ -369,7 +367,6 @@ bool operator>=( const implicit_random_access_iterator&, const implicit_random_a
 int operator-( const implicit_random_access_iterator&, const implicit_random_access_iterator& ) { return 0; }
 implicit_random_access_iterator operator+( int, const implicit_random_access_iterator &a ) { return a; }
 implicit_random_access_iterator operator+( const implicit_random_access_iterator &a, int ) { return a; }
-implicit_random_access_iterator operator-( int, const implicit_random_access_iterator &a ) { return a; }
 implicit_random_access_iterator operator-( const implicit_random_access_iterator &a, int ) { return a; }
 struct explicit_random_access_iterator {
   using value_type = int;
@@ -412,7 +409,6 @@ bool operator>=( const explicit_random_access_iterator&, const explicit_random_a
 int operator-( const explicit_random_access_iterator&, const explicit_random_access_iterator& ) { return 0; }
 explicit_random_access_iterator operator+( int, const explicit_random_access_iterator &a ) { return a; }
 explicit_random_access_iterator operator+( const explicit_random_access_iterator &a, int ) { return a; }
-explicit_random_access_iterator operator-( int, const explicit_random_access_iterator &a ) { return a; }
 explicit_random_access_iterator operator-( const explicit_random_access_iterator &a, int ) { return a; }
 template< typename T >
 struct sentinel {};
@@ -1244,16 +1240,27 @@ BOOST_AUTO_TEST_CASE(Incrementable) {
 
 BOOST_AUTO_TEST_CASE(Iterator) {
   BOOST_CHECK_EQUAL( ( slce::is_iterator< base >::value ), false );
+  BOOST_CHECK_EQUAL( ( slce::is_iterator< explicit_input_iterator >::value ), true );
+  BOOST_CHECK_EQUAL( ( slce::is_iterator< implicit_input_iterator >::value ), true );
   BOOST_CHECK_EQUAL( ( slce::is_iterator< explicit_forward_iterator >::value ), true );
   BOOST_CHECK_EQUAL( ( slce::is_iterator< implicit_forward_iterator >::value ), true );
   BOOST_CHECK_EQUAL( ( slce::is_iterator< explicit_bidirectional_iterator >::value ), true );
   BOOST_CHECK_EQUAL( ( slce::is_iterator< implicit_bidirectional_iterator >::value ), true );
   BOOST_CHECK_EQUAL( ( slce::is_iterator< explicit_random_access_iterator >::value ), true );
   BOOST_CHECK_EQUAL( ( slce::is_iterator< implicit_random_access_iterator >::value ), true );
+  BOOST_CHECK_EQUAL( ( slce::is_iterator< sentinel< explicit_forward_iterator > >::value ), false );
+  BOOST_CHECK_EQUAL( ( slce::is_iterator< sentinel< implicit_forward_iterator > >::value ), false );
+  BOOST_CHECK_EQUAL( ( slce::is_iterator< sentinel< explicit_bidirectional_iterator > >::value ), false );
+  BOOST_CHECK_EQUAL( ( slce::is_iterator< sentinel< implicit_bidirectional_iterator > >::value ), false );
+  BOOST_CHECK_EQUAL( ( slce::is_iterator< sentinel< explicit_random_access_iterator > >::value ), false );
+  BOOST_CHECK_EQUAL( ( slce::is_iterator< sentinel< implicit_random_access_iterator > >::value ), false );
+  // BOOST_CHECK_EQUAL( ( slce::is_iterator< int* >::value ), true ); oops
 }
 
 BOOST_AUTO_TEST_CASE(Sentinel) {
   BOOST_CHECK_EQUAL( ( slce::is_sentinel< base, base >::value ), false );
+  BOOST_CHECK_EQUAL( ( slce::is_sentinel< explicit_input_iterator, explicit_input_iterator >::value ), true );
+  BOOST_CHECK_EQUAL( ( slce::is_sentinel< implicit_input_iterator, implicit_input_iterator >::value ), true );
   BOOST_CHECK_EQUAL( ( slce::is_sentinel< explicit_forward_iterator, explicit_forward_iterator >::value ), true );
   BOOST_CHECK_EQUAL( ( slce::is_sentinel< implicit_forward_iterator, implicit_forward_iterator >::value ), true );
   BOOST_CHECK_EQUAL( ( slce::is_sentinel< explicit_bidirectional_iterator, explicit_bidirectional_iterator >::value ), true );
@@ -1270,6 +1277,8 @@ BOOST_AUTO_TEST_CASE(Sentinel) {
 
 BOOST_AUTO_TEST_CASE(SizedSentinel) {
   BOOST_CHECK_EQUAL( ( slce::is_sized_sentinel< base, base >::value ), false );
+  BOOST_CHECK_EQUAL( ( slce::is_sized_sentinel< explicit_input_iterator, explicit_input_iterator >::value ), true );
+  BOOST_CHECK_EQUAL( ( slce::is_sized_sentinel< implicit_input_iterator, implicit_input_iterator >::value ), true );
   BOOST_CHECK_EQUAL( ( slce::is_sized_sentinel< explicit_forward_iterator, explicit_forward_iterator >::value ), true );
   BOOST_CHECK_EQUAL( ( slce::is_sized_sentinel< implicit_forward_iterator, implicit_forward_iterator >::value ), true );
   BOOST_CHECK_EQUAL( ( slce::is_sized_sentinel< explicit_bidirectional_iterator, explicit_bidirectional_iterator >::value ), true );
@@ -1290,3 +1299,108 @@ BOOST_AUTO_TEST_CASE(SizedSentinel) {
   BOOST_CHECK_EQUAL( ( slce::is_sized_sentinel< sized_sentinel< implicit_random_access_iterator >, implicit_random_access_iterator >::value ), true );
 }
 
+BOOST_AUTO_TEST_CASE(InputIterator) {
+  BOOST_CHECK_EQUAL( ( slce::is_input_iterator< base >::value ), false );
+  BOOST_CHECK_EQUAL( ( slce::is_input_iterator< explicit_input_iterator >::value ), true );
+  BOOST_CHECK_EQUAL( ( slce::is_input_iterator< implicit_input_iterator >::value ), true );
+  BOOST_CHECK_EQUAL( ( slce::is_input_iterator< explicit_forward_iterator >::value ), true );
+  BOOST_CHECK_EQUAL( ( slce::is_input_iterator< implicit_forward_iterator >::value ), true );
+  BOOST_CHECK_EQUAL( ( slce::is_input_iterator< explicit_bidirectional_iterator >::value ), true );
+  BOOST_CHECK_EQUAL( ( slce::is_input_iterator< implicit_bidirectional_iterator >::value ), true );
+  BOOST_CHECK_EQUAL( ( slce::is_input_iterator< explicit_random_access_iterator >::value ), true );
+  BOOST_CHECK_EQUAL( ( slce::is_input_iterator< implicit_random_access_iterator >::value ), true );
+  BOOST_CHECK_EQUAL( ( slce::is_input_iterator< sentinel< explicit_forward_iterator > >::value ), false );
+  BOOST_CHECK_EQUAL( ( slce::is_input_iterator< sentinel< implicit_forward_iterator > >::value ), false );
+  BOOST_CHECK_EQUAL( ( slce::is_input_iterator< sentinel< explicit_bidirectional_iterator > >::value ), false );
+  BOOST_CHECK_EQUAL( ( slce::is_input_iterator< sentinel< implicit_bidirectional_iterator > >::value ), false );
+  BOOST_CHECK_EQUAL( ( slce::is_input_iterator< sentinel< explicit_random_access_iterator > >::value ), false );
+  BOOST_CHECK_EQUAL( ( slce::is_input_iterator< sentinel< implicit_random_access_iterator > >::value ), false );
+  // BOOST_CHECK_EQUAL( ( slce::is_input_iterator< int* >::value ), true ); oops
+}
+
+BOOST_AUTO_TEST_CASE(OutputIterator) {
+  BOOST_CHECK_EQUAL( ( slce::is_output_iterator< base, int >::value ), false );
+  BOOST_CHECK_EQUAL( ( slce::is_output_iterator< explicit_output_iterator, int >::value ), true );
+  BOOST_CHECK_EQUAL( ( slce::is_output_iterator< implicit_output_iterator, int >::value ), true );
+  BOOST_CHECK_EQUAL( ( slce::is_output_iterator< explicit_non_output_iterator, int >::value ), false );
+  BOOST_CHECK_EQUAL( ( slce::is_output_iterator< implicit_non_output_iterator, int >::value ), false );
+  BOOST_CHECK_EQUAL( ( slce::is_output_iterator< sentinel< explicit_output_iterator >, int >::value ), false );
+  BOOST_CHECK_EQUAL( ( slce::is_output_iterator< sentinel< implicit_output_iterator >, int >::value ), false );
+  // BOOST_CHECK_EQUAL( ( slce::is_output_iterator< int*, int >::value ), true ); oops
+}
+
+BOOST_AUTO_TEST_CASE(ForwardIterator) {
+  BOOST_CHECK_EQUAL( ( slce::is_forward_iterator< base >::value ), false );
+  BOOST_CHECK_EQUAL( ( slce::is_forward_iterator< explicit_input_iterator >::value ), false );
+  BOOST_CHECK_EQUAL( ( slce::is_forward_iterator< implicit_input_iterator >::value ), false );
+  BOOST_CHECK_EQUAL( ( slce::is_forward_iterator< explicit_forward_iterator >::value ), true );
+  BOOST_CHECK_EQUAL( ( slce::is_forward_iterator< implicit_forward_iterator >::value ), true );
+  BOOST_CHECK_EQUAL( ( slce::is_forward_iterator< explicit_bidirectional_iterator >::value ), true );
+  BOOST_CHECK_EQUAL( ( slce::is_forward_iterator< implicit_bidirectional_iterator >::value ), true );
+  BOOST_CHECK_EQUAL( ( slce::is_forward_iterator< explicit_random_access_iterator >::value ), true );
+  BOOST_CHECK_EQUAL( ( slce::is_forward_iterator< implicit_random_access_iterator >::value ), true );
+  BOOST_CHECK_EQUAL( ( slce::is_forward_iterator< sentinel< explicit_forward_iterator > >::value ), false );
+  BOOST_CHECK_EQUAL( ( slce::is_forward_iterator< sentinel< implicit_forward_iterator > >::value ), false );
+  BOOST_CHECK_EQUAL( ( slce::is_forward_iterator< sentinel< explicit_bidirectional_iterator > >::value ), false );
+  BOOST_CHECK_EQUAL( ( slce::is_forward_iterator< sentinel< implicit_bidirectional_iterator > >::value ), false );
+  BOOST_CHECK_EQUAL( ( slce::is_forward_iterator< sentinel< explicit_random_access_iterator > >::value ), false );
+  BOOST_CHECK_EQUAL( ( slce::is_forward_iterator< sentinel< implicit_random_access_iterator > >::value ), false );
+  // BOOST_CHECK_EQUAL( ( slce::is_forward_iterator< int* >::value ), true ); oops
+}
+
+BOOST_AUTO_TEST_CASE(BidirectionalIterator) {
+  BOOST_CHECK_EQUAL( ( slce::is_bidirectional_iterator< base >::value ), false );
+  BOOST_CHECK_EQUAL( ( slce::is_bidirectional_iterator< explicit_input_iterator >::value ), false );
+  BOOST_CHECK_EQUAL( ( slce::is_bidirectional_iterator< implicit_input_iterator >::value ), false );
+  BOOST_CHECK_EQUAL( ( slce::is_bidirectional_iterator< explicit_forward_iterator >::value ), false );
+  BOOST_CHECK_EQUAL( ( slce::is_bidirectional_iterator< implicit_forward_iterator >::value ), false );
+  BOOST_CHECK_EQUAL( ( slce::is_bidirectional_iterator< explicit_bidirectional_iterator >::value ), true );
+  BOOST_CHECK_EQUAL( ( slce::is_bidirectional_iterator< implicit_bidirectional_iterator >::value ), true );
+  BOOST_CHECK_EQUAL( ( slce::is_bidirectional_iterator< explicit_random_access_iterator >::value ), true );
+  BOOST_CHECK_EQUAL( ( slce::is_bidirectional_iterator< implicit_random_access_iterator >::value ), true );
+  BOOST_CHECK_EQUAL( ( slce::is_bidirectional_iterator< sentinel< explicit_forward_iterator > >::value ), false );
+  BOOST_CHECK_EQUAL( ( slce::is_bidirectional_iterator< sentinel< implicit_forward_iterator > >::value ), false );
+  BOOST_CHECK_EQUAL( ( slce::is_bidirectional_iterator< sentinel< explicit_bidirectional_iterator > >::value ), false );
+  BOOST_CHECK_EQUAL( ( slce::is_bidirectional_iterator< sentinel< implicit_bidirectional_iterator > >::value ), false );
+  BOOST_CHECK_EQUAL( ( slce::is_bidirectional_iterator< sentinel< explicit_random_access_iterator > >::value ), false );
+  BOOST_CHECK_EQUAL( ( slce::is_bidirectional_iterator< sentinel< implicit_random_access_iterator > >::value ), false );
+  // BOOST_CHECK_EQUAL( ( slce::is_bidirectional_iterator< int* >::value ), true ); oops
+}
+
+BOOST_AUTO_TEST_CASE(RandomAccessIterator) {
+  BOOST_CHECK_EQUAL( ( slce::is_random_access_iterator< base >::value ), false );
+  BOOST_CHECK_EQUAL( ( slce::is_random_access_iterator< explicit_input_iterator >::value ), false );
+  BOOST_CHECK_EQUAL( ( slce::is_random_access_iterator< implicit_input_iterator >::value ), false );
+  BOOST_CHECK_EQUAL( ( slce::is_random_access_iterator< explicit_forward_iterator >::value ), false );
+  BOOST_CHECK_EQUAL( ( slce::is_random_access_iterator< implicit_forward_iterator >::value ), false );
+  BOOST_CHECK_EQUAL( ( slce::is_random_access_iterator< explicit_bidirectional_iterator >::value ), false );
+  BOOST_CHECK_EQUAL( ( slce::is_random_access_iterator< implicit_bidirectional_iterator >::value ), false );
+  BOOST_CHECK_EQUAL( ( slce::is_random_access_iterator< explicit_random_access_iterator >::value ), true );
+  BOOST_CHECK_EQUAL( ( slce::is_random_access_iterator< implicit_random_access_iterator >::value ), true );
+  BOOST_CHECK_EQUAL( ( slce::is_random_access_iterator< sentinel< explicit_forward_iterator > >::value ), false );
+  BOOST_CHECK_EQUAL( ( slce::is_random_access_iterator< sentinel< implicit_forward_iterator > >::value ), false );
+  BOOST_CHECK_EQUAL( ( slce::is_random_access_iterator< sentinel< explicit_bidirectional_iterator > >::value ), false );
+  BOOST_CHECK_EQUAL( ( slce::is_random_access_iterator< sentinel< implicit_bidirectional_iterator > >::value ), false );
+  BOOST_CHECK_EQUAL( ( slce::is_random_access_iterator< sentinel< explicit_random_access_iterator > >::value ), false );
+  BOOST_CHECK_EQUAL( ( slce::is_random_access_iterator< sentinel< implicit_random_access_iterator > >::value ), false );
+  // BOOST_CHECK_EQUAL( ( slce::is_random_access_iterator< int* >::value ), true ); oops
+}
+
+BOOST_AUTO_TEST_CASE(ContiguousIterator) {
+  BOOST_CHECK_EQUAL( ( slce::is_contiguous_iterator< base >::value ), false );
+  BOOST_CHECK_EQUAL( ( slce::is_contiguous_iterator< explicit_input_iterator >::value ), false );
+  BOOST_CHECK_EQUAL( ( slce::is_contiguous_iterator< implicit_input_iterator >::value ), false );
+  BOOST_CHECK_EQUAL( ( slce::is_contiguous_iterator< explicit_forward_iterator >::value ), false );
+  BOOST_CHECK_EQUAL( ( slce::is_contiguous_iterator< implicit_forward_iterator >::value ), false );
+  BOOST_CHECK_EQUAL( ( slce::is_contiguous_iterator< explicit_bidirectional_iterator >::value ), false );
+  BOOST_CHECK_EQUAL( ( slce::is_contiguous_iterator< implicit_bidirectional_iterator >::value ), false );
+  BOOST_CHECK_EQUAL( ( slce::is_contiguous_iterator< explicit_random_access_iterator >::value ), false );
+  BOOST_CHECK_EQUAL( ( slce::is_contiguous_iterator< implicit_random_access_iterator >::value ), false );
+  BOOST_CHECK_EQUAL( ( slce::is_contiguous_iterator< sentinel< explicit_forward_iterator > >::value ), false );
+  BOOST_CHECK_EQUAL( ( slce::is_contiguous_iterator< sentinel< implicit_forward_iterator > >::value ), false );
+  BOOST_CHECK_EQUAL( ( slce::is_contiguous_iterator< sentinel< explicit_bidirectional_iterator > >::value ), false );
+  BOOST_CHECK_EQUAL( ( slce::is_contiguous_iterator< sentinel< implicit_bidirectional_iterator > >::value ), false );
+  BOOST_CHECK_EQUAL( ( slce::is_contiguous_iterator< sentinel< explicit_random_access_iterator > >::value ), false );
+  BOOST_CHECK_EQUAL( ( slce::is_contiguous_iterator< sentinel< implicit_random_access_iterator > >::value ), false );
+  //BOOST_CHECK_EQUAL( ( slce::is_contiguous_iterator< int* >::value ), true ); oops
+}
