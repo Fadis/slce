@@ -1160,7 +1160,7 @@ namespace slce {
   struct is_writable : public std::false_type {};
   template< typename Out, typename T >
   struct is_writable< Out, T, typename detail::voider<
-    decltype( *std::declval< Out&& >() = std::forward< T >( std::declval< T&& >() ) ),
+    //decltype( *std::declval< Out&& >() = std::forward< T >( std::declval< T&& >() ) )//,
     decltype( *std::forward< Out >( std::declval< Out&& >() ) = std::forward< T >( std::declval< T&& >() ) ),
     decltype( const_cast< const iter_reference_t< Out >&& >( *std::declval< Out&& >() ) =
       std::forward< T >( std::declval< T&& >() ) ),
@@ -1176,10 +1176,10 @@ namespace slce {
     typename std::enable_if<
       is_semiregular< T >::value &&
       is_signed_integral< iter_difference_t< T > >::value &&
-      is_same< decltype( ++std::declval< T >() ), T& >::value
+      is_same< decltype( ++std::declval< T& >() ), T& >::value
     >::type,
     iter_difference_t< T >,
-    decltype( std::declval< T >()++ )
+    decltype( std::declval< T& >()++ )
   >::type > : public std::true_type {};
   SLCE_HELPER( WeaklyIncrementable, is_weakly_incrementable )
 
@@ -1189,7 +1189,7 @@ namespace slce {
   struct is_incrementable< T, typename std::enable_if<
     is_regular< T >::value &&
     is_weakly_incrementable< T >::value &&
-    is_same< decltype( std::declval< T >()++ ), T >::value
+    is_same< decltype( std::declval< T& >()++ ), T >::value
   >::type > : public std::true_type {};
   SLCE_HELPER( Incrementable, is_incrementable )
 
@@ -1229,8 +1229,8 @@ namespace slce {
   struct is_sized_sentinel< S, I, typename std::enable_if<
     is_sentinel< S, I >::value &&
     !range::disable_sized_sentinel< typename std::remove_cv< S >::type, typename std::remove_cv< I >::type >::value &&
-    is_same< decltype( std::declval< const S& >() - std::declval< const I& >() ), iter_difference_t< I > >::value &&
-    is_same< decltype( std::declval< const I& >() - std::declval< const S& >() ), iter_difference_t< I > >::value
+    is_same< decltype( std::declval< const S& >() - std::declval< const I& >() ), iter_difference_t< I > >::value //&&
+    //is_same< decltype( std::declval< const I& >() - std::declval< const S& >() ), iter_difference_t< I > >::value
   >::type > : public std::true_type {};
   SLCE_HELPER( SizedSentinel, is_sized_sentinel )
 
@@ -1307,7 +1307,7 @@ namespace slce {
       is_iterator< I >::value &&
       is_writable< I, T >::value
     >::type,
-    decltype( *std::declval< I >()++ = std::forward< T >( std::declval< T&& >() ) )
+    decltype( *std::declval< I& >()++ = std::forward< T >( std::declval< T&& >() ) )
   >::type > : public std::true_type {};
   SLCE_HELPER( OutputIterator, is_output_iterator )
 
@@ -1328,8 +1328,8 @@ namespace slce {
   struct is_bidirectional_iterator< T, typename std::enable_if<
     is_forward_iterator< T >::value &&
     is_derived_from< typename detail::iter_concept< T >::type, std::bidirectional_iterator_tag >::value &&
-    is_same< decltype( --std::declval< T >() ), T& >::value &&
-    is_same< decltype( std::declval< T >()-- ), T >::value
+    is_same< decltype( --std::declval< T& >() ), T& >::value &&
+    is_same< decltype( std::declval< T& >()-- ), T >::value
   >::type > : public std::true_type {};
   SLCE_HELPER( BidirectionalIterator, is_bidirectional_iterator )
 
