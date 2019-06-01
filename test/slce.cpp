@@ -21,6 +21,7 @@
  */
 
 #define BOOST_TEST_MAIN
+#include <vector>
 #include <boost/test/included/unit_test.hpp>
 #include <slce/slce.hpp>
 struct base {};
@@ -1408,5 +1409,32 @@ BOOST_AUTO_TEST_CASE(ContiguousIterator) {
   BOOST_CHECK_EQUAL( ( slce::is_contiguous_iterator< int* >::value ), true );
 #else
   BOOST_CHECK_EQUAL( ( slce::is_contiguous_iterator< int* >::value ), false );
+#endif
+}
+
+BOOST_AUTO_TEST_CASE(IndirectlyMovable) {
+  BOOST_CHECK_EQUAL( ( slce::is_indirectly_movable< typename std::vector< non_copyable >::iterator, typename std::vector< non_copyable >::iterator >::value ), false );
+  BOOST_CHECK_EQUAL( ( slce::is_indirectly_movable< typename std::vector< movable >::iterator, typename std::vector< movable >::iterator >::value ), true );
+  BOOST_CHECK_EQUAL( ( slce::is_indirectly_movable< typename std::vector< copyable >::iterator, typename std::vector< copyable >::iterator >::value ), true );
+}
+
+BOOST_AUTO_TEST_CASE(IndirectlyCopyable) {
+  BOOST_CHECK_EQUAL( ( slce::is_indirectly_copyable< typename std::vector< non_copyable >::iterator, typename std::vector< non_copyable >::iterator >::value ), false );
+  BOOST_CHECK_EQUAL( ( slce::is_indirectly_copyable< typename std::vector< movable >::iterator, typename std::vector< movable >::iterator >::value ), false );
+  BOOST_CHECK_EQUAL( ( slce::is_indirectly_copyable< typename std::vector< copyable >::iterator, typename std::vector< copyable >::iterator >::value ), true );
+}
+
+BOOST_AUTO_TEST_CASE(IndirectlyCopyableStorable) {
+  BOOST_CHECK_EQUAL( ( slce::is_indirectly_copyable_storable< typename std::vector< non_copyable >::iterator, typename std::vector< non_copyable >::iterator >::value ), false );
+  BOOST_CHECK_EQUAL( ( slce::is_indirectly_copyable_storable< typename std::vector< movable >::iterator, typename std::vector< movable >::iterator >::value ), false );
+  BOOST_CHECK_EQUAL( ( slce::is_indirectly_copyable_storable< typename std::vector< copyable >::iterator, typename std::vector< copyable >::iterator >::value ), true );
+}
+
+BOOST_AUTO_TEST_CASE(IndirectlySwappable) {
+  BOOST_CHECK_EQUAL( ( slce::is_indirectly_swappable< typename std::vector< non_copyable >::iterator, typename std::vector< non_copyable >::iterator >::value ), false );
+#ifdef __cpp_lib_ranges
+  BOOST_CHECK_EQUAL( ( slce::is_indirectly_swappable< typename std::vector< movable >::iterator, typename std::vector< movable >::iterator >::value ), true );
+  BOOST_CHECK_EQUAL( ( slce::is_indirectly_swappable< typename std::vector< copyable >::iterator, typename std::vector< copyable >::iterator >::value ), true );
+  BOOST_CHECK_EQUAL( ( slce::is_indirectly_swappable< typename std::vector< base >::iterator, typename std::vector< base >::iterator >::value ), true );
 #endif
 }

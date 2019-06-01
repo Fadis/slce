@@ -1366,6 +1366,85 @@ namespace slce {
     is_same< iter_value_t< T >, typename detail::remove_cvref< iter_reference_t< T > >::type >::value 
   >::type > : public std::true_type {};
   SLCE_HELPER( ContiguousIterator, is_contiguous_iterator )
+
+  template< typename In, typename Out, typename Enable = void >
+  struct is_indirectly_movable : public std::false_type {};
+  template< typename In, typename Out >
+  struct is_indirectly_movable< In, Out, typename std::enable_if<
+    is_readable< In >::value &&
+    is_writable< Out, iter_rvalue_reference_t< In > >::value
+  >::type > :  public std::true_type {};
+  SLCE_HELPER( IndirectlyMovable, is_indirectly_movable )
+
+  template< typename In, typename Out, typename Enable = void >
+  struct is_indirectly_movable_storable : public std::false_type {};
+  template< typename In, typename Out >
+  struct is_indirectly_movable_storable< In, Out, typename std::enable_if<
+    is_indirectly_movable< In, Out >::value &&
+    is_writable< Out, iter_value_t< In > >::value &&
+    is_constructible< iter_value_t< In >, iter_rvalue_reference_t< In > >::value &&
+    is_assignable< iter_value_t< In >&, iter_rvalue_reference_t< In > >::value
+  >::type > :  public std::true_type {};
+  SLCE_HELPER( IndirectlyMovableStorable, is_indirectly_movable_storable )
+
+  template< typename In, typename Out, typename Enable = void >
+  struct is_indirectly_copyable : public std::false_type {};
+  template< typename In, typename Out >
+  struct is_indirectly_copyable< In, Out, typename std::enable_if<
+    is_readable< In >::value &&
+    is_writable< Out, iter_reference_t< In > >::value
+  >::type > :  public std::true_type {};
+  SLCE_HELPER( IndirectlyCopyable, is_indirectly_copyable )
+
+  template< typename In, typename Out, typename Enable = void >
+  struct is_indirectly_copyable_storable : public std::false_type {};
+  template< typename In, typename Out >
+  struct is_indirectly_copyable_storable< In, Out, typename std::enable_if<
+    is_indirectly_copyable< In, Out >::value &&
+    is_writable< Out, iter_value_t< In > >::value &&
+    is_copyable< iter_value_t< In > >::value &&
+    is_constructible< iter_value_t< In >, iter_reference_t< In > >::value &&
+    is_assignable< iter_value_t< In >&, iter_reference_t< In > >::value
+  >::type > :  public std::true_type {};
+  SLCE_HELPER( IndirectlyCopyableStorable, is_indirectly_copyable_storable )
+
+  template< typename I1, typename I2, typename Enable = void >
+  struct is_indirectly_swappable : public std::false_type {};
+#ifdef __cpp_lib_ranges
+  template< typename I1, typename I2 >
+  struct is_indirectly_swappable< In, Out, typename detail::voider<
+    typename std::enable_if<
+      is_readable< I1 >::value &&
+      is_readable< I2 >::value
+    >::value,
+    decltype( std::ranges::iter_swap( std::declval< I1 >(), std::declval< I1 >() ) ),
+    decltype( std::ranges::iter_swap( std::declval< I2 >(), std::declval< I2 >() ) ),
+    decltype( std::ranges::iter_swap( std::declval< I1 >(), std::declval< I2 >() ) ),
+    decltype( std::ranges::iter_swap( std::declval< I2 >(), std::declval< I1 >() ) )
+  >::type > :  public std::true_type {};
+#endif
+  SLCE_HELPER( IndirectlySwappable, is_indirectly_swappable )
+/*
+  namespace detail {
+    template< typename T >
+    struct identity {
+      template< typename T >
+      constexpr T&& operator()( T &&t ) const noexcept {
+        return std::forward< T >( t );
+      }
+    };
+  }
+
+  template< typename I1, typename I2, typename R, typename P1 = detail::identity, typename P2 = detail::identity, typename Enable = void >
+  struct is_indirectly_comparable : public std::false_type {};
+  template< typename I1, typename I2, typename R, typename P1, typename P2 >
+  struct is_indirectly_comparable< I1, I2, R, P1, P2, typename std::enable_if<
+  ///
+  >::type > : public std::false_type {};
+*/
 }
+
+
+
 #endif
 
