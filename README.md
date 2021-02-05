@@ -16,3 +16,4 @@ Boost Unit Test Framework (Only tests require this)
 
 Since callable concepts depends on std::invoke that was introduced in C++17, corresponding type traits always return false in C++14 or prior.
 
+hoge
