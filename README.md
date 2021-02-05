@@ -1,6 +1,8 @@
 # slce
 Standard Library Concepts Emulation Library
 
+[![Build Status](https://tk2-212-15911.vs.sakura.ne.jp/jenkins/buildStatus/icon?job=slce_master_build)](https://tk2-212-15911.vs.sakura.ne.jp/jenkins/job/slce_master_build/)
+
 This header-only library provides type traits similar to things defined in C++20 standard library concepts.
 This library is intended to use for backport C++20 codes to legacy C++ environment.
 
