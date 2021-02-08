@@ -1,5 +1,10 @@
 pipeline {
-  agent any
+  agent {
+    node {
+      label 'lanselot'
+    }
+
+  }
   stages {
     stage('build') {
       steps {
