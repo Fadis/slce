@@ -8,7 +8,11 @@ pipeline {
   stages {
     stage('build') {
       steps {
-        sh 'make -j4'
+        sh '''mkdir -p build
+cd build
+cmake ../ -DCMAKE_INSTALL_PREFIX=/usr
+make -j4
+'''
       }
     }
 
