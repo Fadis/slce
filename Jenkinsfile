@@ -1,10 +1,5 @@
 pipeline {
-  agent {
-    node {
-      label 'lanselot'
-    }
-
-  }
+  agent any
   stages {
     stage('build') {
       steps {
@@ -12,13 +7,7 @@ pipeline {
 cd build
 cmake ../ -DCMAKE_INSTALL_PREFIX=/usr
 make -j4
-'''
-      }
-    }
-
-    stage('test') {
-      steps {
-        sh 'make test'
+make test'''
       }
     }
 
